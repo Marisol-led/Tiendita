@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <title>Tienda Lupita</title>
+    <link rel="stylesheet" type="text/css" href="styles.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script>
+        // Inicializar Supabase
+        const supabaseUrl = "https://avuitaawgfofxbwlisak.supabase.co";
+            const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2dWl0YWF3Z2ZvZnhid2xpc2FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4NTM2MzYsImV4cCI6MjA1MzQyOTYzNn0.Qu9aJOCDQZwP_yUvvnvCzrN_MZGjMb3kEQoMT6RrIpc";
+            window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
+            console.log("Supabase inicializado correctamente");
+
+        // Cargar datos desde Supabase
+        async function cargarDatos() {
+            const { data, error } = await supabase
+                .from('Niños')
+                .select('*')
+                .order('id', { ascending: true }); // Ordenar por ID en vez de Num
+
+            const tabla = document.getElementById('tabla-datos');
+
+            if (error) {
+                console.error("Error al cargar los datos:", error);
+                tabla.innerHTML = "<tr><td colspan='4'>Error al cargar los datos.</td></tr>";
+                return;
+            }
+
+            console.log("Datos obtenidos:", data);
+
+            tabla.innerHTML = `
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Puntos</th>
+                    <th>Editar</th>
+                </tr>`;
+
+            data.forEach((fila) => {
+                tabla.innerHTML += `
+                    <tr>
+                        <td>${fila.id}</td>
+                        <td>${fila.Nombre}</td>
+                        <td>${fila.Puntos}</td>
+                        <td>
+                            <button onclick="cargarFormularioParaActualizar('${fila.id}', '${fila.Nombre}', ${fila.Puntos})">Editar</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        // Insertar datos
+        async function insertarDatos() {
+            const nombre = document.getElementById('input-nombre').value;
+
+            if (!nombre) {
+                alert("Debes ingresar un nombre.");
+                return;
+            }
+
+            const { data, error } = await supabase.from('Niños').insert([
+                { Nombre: nombre, Puntos: 0 } 
+            ]);
+
+            if (error) {
+                console.error("Error al insertar datos:", error);
+                alert("Error al insertar datos.");
+                return;
+            }
+
+            alert("Jugador agregado correctamente.");
+            cargarDatos();
+            document.getElementById('formulario-insertar').reset(); // Limpiar formulario
+        }
+
+        // Cargar datos en la sección de actualización
+        function cargarFormularioParaActualizar(id, nombre, puntos) {
+            document.getElementById('info-id').innerText = id;
+            document.getElementById('info-nombre').innerText = nombre;
+            document.getElementById('input-puntos-update').value = puntos;
+            document.getElementById('hidden-id-update').value = id; // Guarda el ID para actualizarlo correctamente
+        }
+
+        // Actualizar datos
+        async function actualizarDatos() {
+            const id = document.getElementById('hidden-id-update').value;
+            const puntos = parseInt(document.getElementById('input-puntos-update').value, 10);
+
+            if (!id) {
+                alert("Debes seleccionar un jugador para actualizar.");
+                return;
+            }
+
+            const { data, error } = await supabase.from('Niños').update({
+                Puntos: puntos
+            }).eq('id', id);
+
+            if (error) {
+                console.error("Error al actualizar datos:", error);
+                alert("Error al actualizar datos.");
+                return;
+            }
+
+            alert("Puntos actualizados correctamente.");
+            cargarDatos();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarDatos();
+            document.getElementById('btn-insertar').addEventListener('click', insertarDatos);
+            document.getElementById('btn-actualizar').addEventListener('click', actualizarDatos);
+        });
+    </script>
+</head>
+
+<body>
+    <header class="head"> 
+        <img src="./imgs/Lobito.png" id="creeper" alt="creeper" width="250" height="250">
+        <nav class="navbar">
+            <h1>Enid Mariana 9</h1>
+        </nav>
+    </header>
+
+    <div class="acciones">
+        <div class="column">
+            <h2>Agregar jugador</h2>
+            <form id="formulario-insertar" onsubmit="return false;">
+                <label><strong>Nombre:</strong></label>
+                <input type="text" id="input-nombre" required>
+                <br>
+                <button id="btn-insertar">Agregar jugador</button>
+            </form>
+        </div>
+
+        <div class="column2">
+            <h2>Actualizar puntos</h2>
+            <p><strong>ID:</strong> <span id="info-id" class="info">...</span>
+            <strong>Nombre:</strong> <span id="info-nombre" class="info">...</span></p>
+
+            <form onsubmit="return false;">
+                <input type="hidden" id="hidden-id-update"> <!-- Input oculto para almacenar el ID -->
+                <label><strong>Puntos:</strong></label>
+                <input id="input-puntos-update" type="number">
+                <br>
+                <button id="btn-actualizar">Actualizar</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="list">
+        <h2 id="texto">Jugadores</h2>
+        <table id="tabla-datos"></table>
+    </div>
+</body>
+
+<footer class="foot">
+    <h1>Tiendita Lupita</h1>
+    <img src="./imgs/Logo.png" id="Logo" alt="Logo" width="100" height="100">
+</footer>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <title>Tienda Lupita</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script>
+        const supabaseUrl = "https://avuitaawgfofxbwlisak.supabase.co";
+            const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2dWl0YWF3Z2ZvZnhid2xpc2FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4NTM2MzYsImV4cCI6MjA1MzQyOTYzNn0.Qu9aJOCDQZwP_yUvvnvCzrN_MZGjMb3kEQoMT6RrIpc";
+            window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
+            console.log("Supabase inicializado correctamente");
+            
+        async function cargarDatos() {
+            const { data, error } = await supabase.from('Niños').select('*');
+            const tabla = document.getElementById('tabla-datos');
+
+            if (error) {
+                console.error("Error al cargar los datos:", error);
+                tabla.innerHTML = "<tr><td colspan='5'>Error al cargar los datos.</td></tr>";
+                return;
+            }
+
+            tabla.innerHTML = `
+                <tr>
+                    <th>Numero</th>
+                    <th>Nombre</th>
+                    <th>Puntos</th>
+                    <th>Juguetes</th>
+                    <th>Acciones</th>
+                </tr>`;
+
+            data.forEach((fila) => {
+                tabla.innerHTML += `
+                    <tr>
+                        <td>${fila.Num}</td>
+                        <td>${fila.Nombre}</td>
+                        <td>${fila.Puntos}</td>
+                        <td>${fila.Juguetes}</td>
+                        <td>
+                            <button onclick="cargarFormularioParaActualizar('${fila.Num}', '${fila.Nombre}', ${fila.Puntos}, '${fila.Juguetes}')">Editar</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function cargarFormularioParaActualizar(numero, nombre, puntos, juguetes) {
+            document.getElementById('info-numero').innerText = numero;
+            document.getElementById('info-nombre').innerText = nombre;
+            document.getElementById('input-puntos-update').value = puntos;
+            document.getElementById('input-juguetes-update').value = juguetes;
+            document.getElementById('hidden-numero-update').value = numero;
+        }
+
+        async function actualizarDatos() {
+            const numero = document.getElementById('hidden-numero-update').value;
+            const puntos = parseInt(document.getElementById('input-puntos-update').value, 10);
+            const juguetes = document.getElementById('input-juguetes-update').value;
+
+            if (!numero) {
+                alert("Debes seleccionar un registro para actualizar.");
+                return;
+            }
+
+            const { data, error } = await supabase.from('Niños').update({
+                Puntos: puntos,
+                Juguetes: juguetes
+            }).eq('Num', numero);
+
+            if (error) {
+                console.error("Error al actualizar datos:", error);
+                alert("Error al actualizar los datos.");
+                return;
+            }
+
+            alert("Datos actualizados correctamente.");
+            cargarDatos();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            cargarDatos();
+            document.getElementById('btn-actualizar').addEventListener('click', actualizarDatos);
+        });
+    </script>
+    <style>
+        .info {
+            font-size: 20px;
+            font-weight: bold;
+            background-color: #f3f3f3;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .form-container {
+            background-color: #ddd;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            margin: auto;
+        }
+
+        .form-container label {
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Actualizar Puntos</h2>
+    <div class="form-container">
+        <p><strong>Numero:</strong> <span id="info-numero" class="info">Selecciona un niño</span></p>
+        <p><strong>Nombre:</strong> <span id="info-nombre" class="info">Selecciona un niño</span></p>
+
+        <form onsubmit="return false;">
+            <input type="hidden" id="hidden-numero-update"> <!-- Input oculto para almacenar el número -->
+            <label for="input-puntos-update">Puntos:</label>
+            <input id="input-puntos-update" type="number">
+            <br>
+            <label for="input-juguetes-update">Juguetes:</label>
+            <input id="input-juguetes-update">
+            <br>
+            <button id="btn-actualizar">Actualizar</button>
+        </form>
+    </div>
+
+    <h2>Lista de Niños</h2>
+    <table id="tabla-datos"></table>
+
+</body>
+</html>
