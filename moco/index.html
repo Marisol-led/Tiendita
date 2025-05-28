@@ -7,8 +7,8 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script>
         // Inicializar Supabase
-        const supabaseUrl = "https://avuitaawgfofxbwlisak.supabase.co";
-            const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF2dWl0YWF3Z2ZvZnhid2xpc2FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc4NTM2MzYsImV4cCI6MjA1MzQyOTYzNn0.Qu9aJOCDQZwP_yUvvnvCzrN_MZGjMb3kEQoMT6RrIpc";
+        const supabaseUrl = "https://awakjryechetjcfviuvy.supabase.co";
+            const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF3YWtqcnllY2hldGpjZnZpdXZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzOTYzNDcsImV4cCI6MjA2Mzk3MjM0N30.7qCLp8YpUoc5rNiiDmoIa20-7wVyGagUdVFW9CMmpgE";
             window.supabase = supabase.createClient(supabaseUrl, supabaseKey);
             console.log("Supabase inicializado correctamente");
 
@@ -78,32 +78,52 @@
         function cargarFormularioParaActualizar(id, nombre, puntos) {
             document.getElementById('info-id').innerText = id;
             document.getElementById('info-nombre').innerText = nombre;
-            document.getElementById('input-puntos-update').value = puntos;
+            document.getElementById('info-puntos').innerText = puntos;
+            document.getElementById('input-puntos-update').value = '';
             document.getElementById('hidden-id-update').value = id; // Guarda el ID para actualizarlo correctamente
         }
 
-        // Actualizar datos
+        // Actualizar datos sumando puntos
         async function actualizarDatos() {
             const id = document.getElementById('hidden-id-update').value;
-            const puntos = parseInt(document.getElementById('input-puntos-update').value, 10);
+            const nuevosPuntos = parseInt(document.getElementById('input-puntos-update').value, 10);
 
-            if (!id) {
-                alert("Debes seleccionar un jugador para actualizar.");
+            if (!id || isNaN(nuevosPuntos)) {
+                alert("Debes seleccionar un jugador y agregar puntos válidos.");
                 return;
             }
 
-            const { data, error } = await supabase.from('Niños').update({
-                Puntos: puntos
-            }).eq('id', id);
+            // Obtener los puntos actuales antes de actualizar
+            const { data: jugador, error: fetchError } = await supabase
+                .from('Niños')
+                .select('Puntos')
+                .eq('id', id)
+                .single();
 
-            if (error) {
-                console.error("Error al actualizar datos:", error);
-                alert("Error al actualizar datos.");
+            if (fetchError || !jugador) {
+                console.error("Error al obtener puntos actuales:", fetchError);
+                alert("No se pudieron obtener los puntos actuales.");
                 return;
             }
 
-            alert("Puntos actualizados correctamente.");
-            cargarDatos();
+            const puntosActuales = jugador.Puntos;
+            const totalPuntos = puntosActuales + nuevosPuntos;
+
+            // Actualizar los puntos sumando el nuevo valor
+            const { error: updateError } = await supabase
+                .from('Niños')
+                .update({ Puntos: totalPuntos })
+                .eq('id', id);
+                
+            if (updateError) {
+                console.error("Error al actualizar los puntos:", updateError);
+                alert("Error al actualizar los puntos.");
+                return;
+            }
+
+            alert(`Puntos actualizados correctamente. Nuevo total: ${totalPuntos}`);
+            cargarDatos(); // Refrescar la tabla
+            document.getElementById('input-puntos-update').value = ''; // limpiar campo
         }
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -136,14 +156,14 @@
         <div class="column2">
             <h2>Actualizar puntos</h2>
             <p><strong>ID:</strong> <span id="info-id" class="info">...</span>
-            <strong>Nombre:</strong> <span id="info-nombre" class="info">...</span></p>
+            <strong>Nombre:</strong> <span id="info-nombre" class="info">...</span><strong>Puntos:</strong> <span id="info-puntos" class="info">...</span></p>
 
             <form onsubmit="return false;">
                 <input type="hidden" id="hidden-id-update"> <!-- Input oculto para almacenar el ID -->
-                <label><strong>Puntos:</strong></label>
+                <label><strong>Nuevos:</strong></label>
                 <input id="input-puntos-update" type="number">
                 <br>
-                <button id="btn-actualizar">Actualizar</button>
+                <button id="btn-actualizar" onclick="actualizarDatos()">Actualizar</button>
             </form>
         </div>
     </div>
